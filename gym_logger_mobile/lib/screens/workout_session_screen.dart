@@ -23,9 +23,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   final List<_SessionExercise> _exercises = [];
   Timer? _timer;
   Timer? _autosaveDebounce;
+  Timer? _restTimer;
   DateTime? _startedAt;
   Duration _elapsed = Duration.zero;
+  Duration _restTimeRemaining = Duration.zero;
   int? _workoutId;
+  _SessionSet? _activeRestSet;
   bool _isSaving = false;
   bool _isFinishing = false;
   bool _isUpdatingTemplate = false;
@@ -33,6 +36,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   bool _isRestoredSession = false;
   bool _pendingAutosave = false;
   String _lastTemplateSnapshot = '';
+  static const int _defaultRestSeconds = 90;
 
   @override
   void initState() {
@@ -47,6 +51,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   void dispose() {
     _timer?.cancel();
     _autosaveDebounce?.cancel();
+    _restTimer?.cancel();
     for (final ex in _exercises) {
       for (final s in ex.sets) {
         s.dispose();
@@ -106,6 +111,33 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
         _elapsed = DateTime.now().difference(_startedAt!);
       });
     });
+  }
+
+  void _startRestTimer(_SessionSet set) {
+    /// Start a rest timer after completing a set.
+    /// Default duration is 90 seconds.
+    _stopRestTimer();
+    _activeRestSet = set;
+    _restTimeRemaining = Duration(seconds: _defaultRestSeconds);
+
+    _restTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        if (_restTimeRemaining.inSeconds > 0) {
+          _restTimeRemaining = Duration(seconds: _restTimeRemaining.inSeconds - 1);
+        } else {
+          _stopRestTimer();
+        }
+      });
+    });
+  }
+
+  void _stopRestTimer() {
+    /// Stop the rest timer and clear the active set.
+    _restTimer?.cancel();
+    _restTimer = null;
+    _activeRestSet = null;
+    _restTimeRemaining = Duration.zero;
   }
 
   Future<void> _createWorkoutOnServer() async {
@@ -267,6 +299,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     final mins = (d.inMinutes % 60).toString().padLeft(2, '0');
     final secs = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$hours:$mins:$secs';
+  }
+
+  String _formatRestTime(Duration d) {
+    /// Format rest timer as MM:SS.
+    final mins = d.inMinutes.toString().padLeft(2, '0');
+    final secs = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$mins:$secs';
   }
 
   List<Map<String, dynamic>> _buildSetsPayload() {
@@ -1022,6 +1061,12 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
                 onChanged: (value) {
                   setState(() {
                     set.isCompleted = value ?? false;
+                    // Start rest timer when set is marked as completed
+                    if (set.isCompleted) {
+                      _startRestTimer(set);
+                    } else {
+                      _stopRestTimer();
+                    }
                   });
                   _scheduleAutosave();
                 },
@@ -1121,6 +1166,94 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
               ],
             ),
           ),
+          if (_activeRestSet != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.green.shade300, width: 2),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Rest Time',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            if (_restTimeRemaining.inSeconds >= 15) {
+                              _restTimeRemaining = Duration(seconds: _restTimeRemaining.inSeconds - 15);
+                            }
+                          });
+                        },
+                        icon: const Icon(Icons.remove_circle, size: 32, color: Colors.red),
+                        tooltip: 'Decrease by 15s',
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        _formatRestTime(_restTimeRemaining),
+                        style: const TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _restTimeRemaining = Duration(seconds: _restTimeRemaining.inSeconds + 15);
+                          });
+                        },
+                        icon: const Icon(Icons.add_circle, size: 32, color: Colors.green),
+                        tooltip: 'Increase by 15s',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _stopRestTimer,
+                        icon: const Icon(Icons.stop_circle_outlined),
+                        label: const Text('Skip Rest'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade200,
+                          foregroundColor: Colors.black87,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _restTimeRemaining = Duration(seconds: _defaultRestSeconds);
+                          });
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reset'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade100,
+                          foregroundColor: Colors.blue.shade900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
