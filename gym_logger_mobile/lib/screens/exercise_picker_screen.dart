@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../config/api_config.dart';
 
 class ExercisePickerScreen extends StatefulWidget {
   @override
@@ -14,7 +15,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
 
   Future<void> fetchExercises() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:8000/api/exercises/'));
+      final response = await http.get(ApiConfig.uri('/api/exercises/'));
       if (response.statusCode == 200) {
         setState(() {
           allExercises = json.decode(response.body);

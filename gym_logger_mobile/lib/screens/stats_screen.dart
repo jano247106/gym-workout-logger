@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:fl_chart/fl_chart.dart';
+import '../config/api_config.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -46,26 +47,26 @@ class _StatsScreenState extends State<StatsScreen> {
       setState(() => _isLoading = true);
 
       final trendResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/stats/volume_trend/?days=${_daysForPeriod(_selectedPeriod)}'),
+        ApiConfig.uri('/api/stats/volume_trend/?days=${_daysForPeriod(_selectedPeriod)}'),
       );
 
       final streakResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/stats/streak/'),
+        ApiConfig.uri('/api/stats/streak/'),
       );
 
       // Load PRs
       final prsResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/stats/prs/'),
+        ApiConfig.uri('/api/stats/prs/'),
       );
 
       // Load preferences
       final prefResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/stats/preferences/'),
+        ApiConfig.uri('/api/stats/preferences/'),
       );
 
       // Load all exercises for selection
       final exResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/exercises/'),
+        ApiConfig.uri('/api/exercises/'),
       );
 
       if (!mounted) return;
@@ -573,7 +574,7 @@ class _StatsScreenState extends State<StatsScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/stats/preferences/'),
+        ApiConfig.uri('/api/stats/preferences/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'tracked_exercises': tempSelected.toList(),

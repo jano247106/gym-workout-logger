@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       setState(() => _isLoading = true);
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/workouts/?is_active=false'),
+        ApiConfig.uri('/api/workouts/?is_active=false'),
       );
 
       if (!mounted) return;
@@ -136,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     try {
       final response = await http.delete(
-        Uri.parse('http://10.0.2.2:8000/api/workouts/$workoutId/'),
+        ApiConfig.uri('/api/workouts/$workoutId/'),
       );
 
       if (!mounted) return;

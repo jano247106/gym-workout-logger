@@ -4,6 +4,7 @@ import '../widgets/exercise_card.dart';
 import 'exercise_picker_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../config/api_config.dart';
 
 class CreateTemplateScreen extends StatefulWidget {
   final dynamic initialTemplate;
@@ -86,12 +87,12 @@ class _CreateTemplateScreenState extends State<CreateTemplateScreen> {
     try {
       final response = _isEditing
           ? await http.put(
-              Uri.parse('http://10.0.2.2:8000/api/templates/${widget.initialTemplate['id']}/'),
+              ApiConfig.uri('/api/templates/${widget.initialTemplate['id']}/'),
               headers: {"Content-Type": "application/json"},
               body: payload,
             )
           : await http.post(
-              Uri.parse('http://10.0.2.2:8000/api/templates/'),
+              ApiConfig.uri('/api/templates/'),
               headers: {"Content-Type": "application/json"},
               body: payload,
             );

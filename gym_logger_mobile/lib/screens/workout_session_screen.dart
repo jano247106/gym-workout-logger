@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import 'exercise_picker_screen.dart';
 
 class WorkoutSessionScreen extends StatefulWidget {
@@ -143,7 +144,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
   Future<void> _createWorkoutOnServer() async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/workouts/'),
+        ApiConfig.uri('/api/workouts/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'template': widget.template['id'],
@@ -172,7 +173,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     if (widget.initialWorkoutId != null) {
       try {
         final response = await http.get(
-          Uri.parse('http://10.0.2.2:8000/api/workouts/${widget.initialWorkoutId}/'),
+          ApiConfig.uri('/api/workouts/${widget.initialWorkoutId}/'),
         );
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -191,7 +192,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     if (templateId == null) {
       try {
         final response = await http.get(
-          Uri.parse('http://10.0.2.2:8000/api/workouts/?is_active=true'),
+          ApiConfig.uri('/api/workouts/?is_active=true'),
         );
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -215,7 +216,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/workouts/?template_id=$templateId&is_active=true'),
+        ApiConfig.uri('/api/workouts/?template_id=$templateId&is_active=true'),
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -399,13 +400,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
     try {
       if (_workoutId != null) {
         await http.put(
-          Uri.parse('http://10.0.2.2:8000/api/workouts/$_workoutId/'),
+          ApiConfig.uri('/api/workouts/$_workoutId/'),
           headers: {'Content-Type': 'application/json'},
           body: payload,
         );
       } else {
         final response = await http.post(
-          Uri.parse('http://10.0.2.2:8000/api/workouts/'),
+          ApiConfig.uri('/api/workouts/'),
           headers: {'Content-Type': 'application/json'},
           body: payload,
         );
@@ -613,7 +614,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
 
     try {
       final response = await http.put(
-        Uri.parse('http://10.0.2.2:8000/api/templates/$templateId/'),
+        ApiConfig.uri('/api/templates/$templateId/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'name': widget.template['name'],
@@ -771,7 +772,7 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
 
     try {
       if (_workoutId != null) {
-        await http.delete(Uri.parse('http://10.0.2.2:8000/api/workouts/$_workoutId/'));
+        await http.delete(ApiConfig.uri('/api/workouts/$_workoutId/'));
       }
       if (mounted) Navigator.pop(context, false);
     } catch (e) {
@@ -820,13 +821,13 @@ class _WorkoutSessionScreenState extends State<WorkoutSessionScreen> {
       http.Response response;
       if (_workoutId != null) {
         response = await http.put(
-          Uri.parse('http://10.0.2.2:8000/api/workouts/$_workoutId/'),
+          ApiConfig.uri('/api/workouts/$_workoutId/'),
           headers: {'Content-Type': 'application/json'},
           body: payload,
         );
       } else {
         response = await http.post(
-          Uri.parse('http://10.0.2.2:8000/api/workouts/'),
+          ApiConfig.uri('/api/workouts/'),
           headers: {'Content-Type': 'application/json'},
           body: payload,
         );

@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../screens/template_detail_screen.dart';
 import '../screens/create_template_screen.dart';
 import '../screens/workout_session_screen.dart';
+import '../config/api_config.dart';
 
 class WorkoutTab extends StatefulWidget {
   @override
@@ -41,7 +42,7 @@ class _WorkoutTabState extends State<WorkoutTab> {
 
   Future<void> _deleteTemplate(dynamic template) async {
     final response = await http.delete(
-      Uri.parse('http://10.0.2.2:8000/api/templates/${template['id']}/'),
+      ApiConfig.uri('/api/templates/${template['id']}/'),
     );
 
     if (!mounted) return;
@@ -80,8 +81,8 @@ class _WorkoutTabState extends State<WorkoutTab> {
 
   Future<void> fetchTemplates() async {
     try {
-      final templatesResponse = await http.get(Uri.parse('http://10.0.2.2:8000/api/templates/'));
-      final activeResponse = await http.get(Uri.parse('http://10.0.2.2:8000/api/workouts/?is_active=true'));
+      final templatesResponse = await http.get(ApiConfig.uri('/api/templates/'));
+      final activeResponse = await http.get(ApiConfig.uri('/api/workouts/?is_active=true'));
 
       if (templatesResponse.statusCode == 200 && activeResponse.statusCode == 200) {
         if (mounted) {
@@ -145,7 +146,7 @@ class _WorkoutTabState extends State<WorkoutTab> {
 
   Future<void> _endSession(dynamic session) async {
     final response = await http.put(
-      Uri.parse('http://10.0.2.2:8000/api/workouts/${session['id']}/'),
+      ApiConfig.uri('/api/workouts/${session['id']}/'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'is_finished': true}),
     );
