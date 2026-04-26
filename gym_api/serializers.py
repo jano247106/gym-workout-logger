@@ -20,7 +20,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
         model = Exercise
         fields = ['id', 'name', 'description', 'image_url', 'machine_id', 'muscles']
 
-# --- SERIALIZERY PRE ŠABLÓNY ---
+# --- Template Serializers ---
 
 class TemplateSetSerializer(serializers.ModelSerializer):
     class Meta:
@@ -72,7 +72,7 @@ class WorkoutTemplateSerializer(serializers.ModelSerializer):
         model = WorkoutTemplate
         fields = ['id', 'name', 'created_at', 'exercises_in_template']
 
-# --- SERIALIZERY PRE VYKONANÉ TRÉNINGY (Workouty) ---
+# --- Performed Workout Serializers ---
 
 class WorkoutSetSerializer(serializers.ModelSerializer):
     exercise_name = serializers.ReadOnlyField(source='exercise.name')

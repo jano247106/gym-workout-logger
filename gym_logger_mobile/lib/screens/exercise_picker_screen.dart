@@ -23,7 +23,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
         });
       }
     } catch (e) {
-      print("Chyba: $e");
+      print("Error: $e");
       setState(() => isLoading = false);
     }
   }
@@ -48,7 +48,6 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                   title: Text(ex['name']),
                   subtitle: Text(ex['muscles'].map((m) => m['body_part_name']).join(', ')),
                   onTap: () {
-                    // VRÁTIME vybraný cvik späť predchádzajúcej obrazovke
                     Navigator.pop(context, ex);
                   },
                 );

@@ -56,7 +56,7 @@ class WorkoutViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         user = User.objects.first()
         if not user:
-            return Response({"error": "V DB nie je žiaden user!"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "No user found in database"}, status=status.HTTP_400_BAD_REQUEST)
 
         template_id = request.data.get('template')
         template = WorkoutTemplate.objects.filter(id=template_id).first() if template_id else None
@@ -136,10 +136,10 @@ class WorkoutTemplateViewSet(viewsets.ModelViewSet):
         template_name = request.data.get('name')
         exercises_data = request.data.get('exercises', [])
         
-        # Ak nemáš vyriešený login, vezmeme prvého usera
+        # TODO: Implement proper user authentication
         user = User.objects.first() 
         if not user:
-            return Response({"error": "V DB nie je žiaden user!"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "No user found in database"}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
             template = WorkoutTemplate.objects.create(name=template_name, user=user)

@@ -13,7 +13,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> _workouts = [];
   bool _isLoading = true;
-  String _filterPeriod = 'all'; // 'all', 'week', 'month'
+  String _filterPeriod = 'all';
 
   @override
   void initState() {

@@ -68,8 +68,8 @@ class WorkoutSet(models.Model):
 class UserStatsPreference(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='stats_preference')
     # Top exercises to track (JSON array of exercise IDs)
-    tracked_exercises = models.JSONField(default=list, blank=True)  # [1, 2, 3]
-    # Primary exercises for main muscle groups (hrudnik, chrbat, nohy)
+    tracked_exercises = models.JSONField(default=list, blank=True)
+    # Primary exercises for main muscle groups (chest, back, legs)
     primary_chest_exercise = models.ForeignKey(Exercise, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_chest')
     primary_back_exercise = models.ForeignKey(Exercise, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_back')
     primary_legs_exercise = models.ForeignKey(Exercise, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_legs')

@@ -93,7 +93,7 @@ class _WorkoutTabState extends State<WorkoutTab> {
         }
       }
     } catch (e) {
-      print("Chyba API: $e");
+      print("API Error: $e");
       if (mounted) setState(() => isLoading = false);
     }
   }
