@@ -18,8 +18,35 @@ class _StatsScreenState extends State<StatsScreen> {
   List<Map<String, dynamic>> _allExercises = [];
   Set<int> _selectedExerciseIds = {};
   List<Map<String, dynamic>> _volumeTrend = [];
+  Set<DateTime> _trainedDates = {};
+  DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   int _streakDays = 0;
   String _selectedPeriod = '30d';
+
+  static const List<String> _monthLabels = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  static const List<String> _weekdayLabels = [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+  ];
 
   int _daysForPeriod(String period) {
     switch (period) {
@@ -56,6 +83,10 @@ class _StatsScreenState extends State<StatsScreen> {
         ApiConfig.uri('/api/stats/streak/'),
       );
 
+      final workoutsResponse = await http.get(
+        ApiConfig.uri('/api/workouts/?is_active=false'),
+      );
+
       // Load PRs
       final prsResponse = await http.get(ApiConfig.uri('/api/stats/prs/'));
 
@@ -71,12 +102,14 @@ class _StatsScreenState extends State<StatsScreen> {
 
       if (trendResponse.statusCode == 200 &&
           streakResponse.statusCode == 200 &&
+          workoutsResponse.statusCode == 200 &&
           prsResponse.statusCode == 200 &&
           prefResponse.statusCode == 200 &&
           exResponse.statusCode == 200) {
         final trendData = json.decode(trendResponse.body);
         final streakData =
             json.decode(streakResponse.body) as Map<String, dynamic>;
+        final workoutsData = json.decode(workoutsResponse.body) as List;
         final prefData = json.decode(prefResponse.body) as Map<String, dynamic>;
         final exData = json.decode(exResponse.body) as List;
 
@@ -95,6 +128,7 @@ class _StatsScreenState extends State<StatsScreen> {
               (streakData['streak_days'] as num?)?.toInt() ??
               (streakData['streak_weeks'] as num?)?.toInt() ??
               0;
+          _trainedDates = _extractTrainedDates(workoutsData);
           _prs = json.decode(prsResponse.body);
           _preferences = prefData;
           _allExercises = exData
@@ -141,6 +175,9 @@ class _StatsScreenState extends State<StatsScreen> {
 
                     // TOP PRs SECTION
                     _buildTopPRsSection(),
+                    const SizedBox(height: 24),
+
+                    _buildWorkoutCalendarCard(),
                   ],
                 ),
               ),
@@ -189,6 +226,200 @@ class _StatsScreenState extends State<StatsScreen> {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Set<DateTime> _extractTrainedDates(List workoutsData) {
+    final trainedDates = <DateTime>{};
+
+    for (final workout in workoutsData) {
+      if (workout is! Map<String, dynamic>) continue;
+
+      final startRaw = workout['start_time']?.toString();
+      final setsRaw = workout['sets'];
+      if (startRaw == null || setsRaw is! List) continue;
+
+      final hasCompletedSet = setsRaw.any(
+        (setItem) =>
+            setItem is Map<String, dynamic> && setItem['is_completed'] == true,
+      );
+      if (!hasCompletedSet) continue;
+
+      try {
+        final dt = DateTime.parse(startRaw).toLocal();
+        trainedDates.add(DateTime(dt.year, dt.month, dt.day));
+      } catch (_) {
+        // Ignore malformed dates from API.
+      }
+    }
+
+    return trainedDates;
+  }
+
+  Widget _buildWorkoutCalendarCard() {
+    final firstDayOfMonth = DateTime(
+      _visibleMonth.year,
+      _visibleMonth.month,
+      1,
+    );
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _visibleMonth.year,
+      _visibleMonth.month,
+    );
+    final monthTitle =
+        '${_monthLabels[_visibleMonth.month - 1]} ${_visibleMonth.year}';
+
+    // DateTime.weekday is 1-7 (Mon-Sun). Convert to 0-6 grid index.
+    final leadingEmptyCells = firstDayOfMonth.weekday - 1;
+    final totalCells = leadingEmptyCells + daysInMonth;
+    final rowCount = (totalCells / 7).ceil();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Training Calendar',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: () {
+                        setState(() {
+                          _visibleMonth = DateTime(
+                            _visibleMonth.year,
+                            _visibleMonth.month - 1,
+                          );
+                        });
+                      },
+                    ),
+                    Text(
+                      monthTitle,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () {
+                        setState(() {
+                          _visibleMonth = DateTime(
+                            _visibleMonth.year,
+                            _visibleMonth.month + 1,
+                          );
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: _weekdayLabels
+                  .map(
+                    (weekday) => Expanded(
+                      child: Center(
+                        child: Text(
+                          weekday,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 8),
+            Column(
+              children: List.generate(rowCount, (row) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: List.generate(7, (column) {
+                      final cellIndex = row * 7 + column;
+                      final dayNumber = cellIndex - leadingEmptyCells + 1;
+                      final isInMonth =
+                          dayNumber >= 1 && dayNumber <= daysInMonth;
+
+                      if (!isInMonth) {
+                        return const Expanded(child: SizedBox(height: 52));
+                      }
+
+                      final dayDate = DateTime(
+                        _visibleMonth.year,
+                        _visibleMonth.month,
+                        dayNumber,
+                      );
+                      final hasWorkout = _trainedDates.contains(dayDate);
+                      final today = DateTime.now();
+                      final isToday =
+                          dayDate.year == today.year &&
+                          dayDate.month == today.month &&
+                          dayDate.day == today.day;
+
+                      return Expanded(
+                        child: Container(
+                          height: 52,
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          decoration: BoxDecoration(
+                            color: hasWorkout
+                                ? Colors.green.withValues(alpha: 0.10)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isToday
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.grey.withValues(alpha: 0.25),
+                              width: isToday ? 1.4 : 0.8,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '$dayNumber',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 3),
+                              if (hasWorkout)
+                                const Text(
+                                  '🏋️',
+                                  style: TextStyle(fontSize: 13),
+                                )
+                              else
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withValues(alpha: 0.35),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                );
+              }),
             ),
           ],
         ),
