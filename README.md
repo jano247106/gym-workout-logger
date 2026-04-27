@@ -5,14 +5,14 @@ https://github.com/jano247106/KRY-project
 Gym Logger is a full-stack workout tracking project with a Django backend and a Flutter mobile app.
 
 ## Backend
-From `Projekt\gym_logger`, run:
+From `gym-workout-logger\gym_logger`, run:
 
 ```bash
 python manage.py runserver 0.0.0.0:8000
 ```
 
 ## Flutter App
-From `Projekt\gym_logger\gym_logger_mobile`, run:
+From `gym-workout-logger\gym_logger\gym_logger_mobile`, run:
 
 ```bash
 flutter run
