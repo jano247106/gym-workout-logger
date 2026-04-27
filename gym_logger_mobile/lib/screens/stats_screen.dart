@@ -18,7 +18,7 @@ class _StatsScreenState extends State<StatsScreen> {
   List<Map<String, dynamic>> _allExercises = [];
   Set<int> _selectedExerciseIds = {};
   List<Map<String, dynamic>> _volumeTrend = [];
-  int _streakWeeks = 0;
+  int _streakDays = 0;
   String _selectedPeriod = '30d';
 
   int _daysForPeriod(String period) {
@@ -47,7 +47,9 @@ class _StatsScreenState extends State<StatsScreen> {
       setState(() => _isLoading = true);
 
       final trendResponse = await http.get(
-        ApiConfig.uri('/api/stats/volume_trend/?days=${_daysForPeriod(_selectedPeriod)}'),
+        ApiConfig.uri(
+          '/api/stats/volume_trend/?days=${_daysForPeriod(_selectedPeriod)}',
+        ),
       );
 
       final streakResponse = await http.get(
@@ -55,9 +57,7 @@ class _StatsScreenState extends State<StatsScreen> {
       );
 
       // Load PRs
-      final prsResponse = await http.get(
-        ApiConfig.uri('/api/stats/prs/'),
-      );
+      final prsResponse = await http.get(ApiConfig.uri('/api/stats/prs/'));
 
       // Load preferences
       final prefResponse = await http.get(
@@ -65,9 +65,7 @@ class _StatsScreenState extends State<StatsScreen> {
       );
 
       // Load all exercises for selection
-      final exResponse = await http.get(
-        ApiConfig.uri('/api/exercises/'),
-      );
+      final exResponse = await http.get(ApiConfig.uri('/api/exercises/'));
 
       if (!mounted) return;
 
@@ -77,7 +75,8 @@ class _StatsScreenState extends State<StatsScreen> {
           prefResponse.statusCode == 200 &&
           exResponse.statusCode == 200) {
         final trendData = json.decode(trendResponse.body);
-        final streakData = json.decode(streakResponse.body) as Map<String, dynamic>;
+        final streakData =
+            json.decode(streakResponse.body) as Map<String, dynamic>;
         final prefData = json.decode(prefResponse.body) as Map<String, dynamic>;
         final exData = json.decode(exResponse.body) as List;
 
@@ -85,23 +84,30 @@ class _StatsScreenState extends State<StatsScreen> {
 
         setState(() {
           _volumeTrend = List<Map<String, dynamic>>.from(
-            (trendData['trend'] as List).map((item) => {
-              'date': item['date'].toString(),
-              'volume': (item['volume'] as num).toDouble(),
-            }),
+            (trendData['trend'] as List).map(
+              (item) => {
+                'date': item['date'].toString(),
+                'volume': (item['volume'] as num).toDouble(),
+              },
+            ),
           );
-          _streakWeeks = (streakData['streak_weeks'] as num?)?.toInt() ?? 0;
+          _streakDays =
+              (streakData['streak_days'] as num?)?.toInt() ??
+              (streakData['streak_weeks'] as num?)?.toInt() ??
+              0;
           _prs = json.decode(prsResponse.body);
           _preferences = prefData;
-          _allExercises = exData.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+          _allExercises = exData
+              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+              .toList();
           _selectedExerciseIds = tracked.map((e) => (e as num).toInt()).toSet();
         });
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading stats: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error loading stats: $e')));
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -116,10 +122,7 @@ class _StatsScreenState extends State<StatsScreen> {
         title: const Text('Stats & Progress'),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadStats,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadStats),
         ],
       ),
       body: _isLoading
@@ -146,7 +149,7 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   Widget _buildWorkoutStreakCard() {
-    final streakText = _streakWeeks == 1 ? '1 week' : '$_streakWeeks weeks';
+    final streakText = _streakDays == 1 ? '1 day' : '$_streakDays days';
 
     return Card(
       child: Padding(
@@ -160,7 +163,10 @@ class _StatsScreenState extends State<StatsScreen> {
                 color: Colors.orange.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.local_fire_department, color: Colors.orange),
+              child: const Icon(
+                Icons.local_fire_department,
+                color: Colors.orange,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -170,16 +176,16 @@ class _StatsScreenState extends State<StatsScreen> {
                   Text(
                     'Workout Streak',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     streakText,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.orange[800],
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: Colors.orange[800],
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -199,9 +205,9 @@ class _StatsScreenState extends State<StatsScreen> {
           children: [
             Text(
               'Total Volume Trend',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -217,7 +223,9 @@ class _StatsScreenState extends State<StatsScreen> {
             if (_volumeTrend.isEmpty)
               const SizedBox(
                 height: 220,
-                child: Center(child: Text('No volume data for selected period')),
+                child: Center(
+                  child: Text('No volume data for selected period'),
+                ),
               )
             else
               _buildTrendChart(),
@@ -262,7 +270,10 @@ class _StatsScreenState extends State<StatsScreen> {
 
     final xIntervalRaw = ((_volumeTrend.length - 1) / 4).ceilToDouble();
     final xInterval = xIntervalRaw <= 0 ? 1.0 : xIntervalRaw;
-    final labelModulo = ((_volumeTrend.length - 1) / 4).ceil().clamp(1, 1000000);
+    final labelModulo = ((_volumeTrend.length - 1) / 4).ceil().clamp(
+      1,
+      1000000,
+    );
 
     return SizedBox(
       height: 240,
@@ -278,8 +289,12 @@ class _StatsScreenState extends State<StatsScreen> {
             horizontalInterval: yInterval,
           ),
           titlesData: FlTitlesData(
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -292,7 +307,8 @@ class _StatsScreenState extends State<StatsScreen> {
                   final eps = yInterval * 0.25;
                   if ((value - low).abs() < eps) return Text('${low.toInt()}');
                   if ((value - mid).abs() < eps) return Text('${mid.toInt()}');
-                  if ((value - high).abs() < eps) return Text('${high.toInt()}');
+                  if ((value - high).abs() < eps)
+                    return Text('${high.toInt()}');
                   return const SizedBox.shrink();
                 },
               ),
@@ -304,12 +320,16 @@ class _StatsScreenState extends State<StatsScreen> {
                 interval: xInterval,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
-                  if (idx < 0 || idx >= _volumeTrend.length) return const SizedBox.shrink();
-                  if (idx % labelModulo != 0 && idx != _volumeTrend.length - 1) {
+                  if (idx < 0 || idx >= _volumeTrend.length)
+                    return const SizedBox.shrink();
+                  if (idx % labelModulo != 0 &&
+                      idx != _volumeTrend.length - 1) {
                     return const SizedBox.shrink();
                   }
                   final rawDate = _volumeTrend[idx]['date'].toString();
-                  final label = rawDate.length >= 10 ? rawDate.substring(5, 10) : rawDate;
+                  final label = rawDate.length >= 10
+                      ? rawDate.substring(5, 10)
+                      : rawDate;
                   return Padding(
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(label, style: const TextStyle(fontSize: 10)),
@@ -367,9 +387,9 @@ class _StatsScreenState extends State<StatsScreen> {
               children: [
                 Text(
                   '🏆 Top PRs',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.more_vert),
@@ -390,12 +410,12 @@ class _StatsScreenState extends State<StatsScreen> {
 
   List<Widget> _buildTopPRCards(Map<String, dynamic> prsSource) {
     final List<Widget> cards = [];
-    
+
     for (var i = 0; i < min(prsSource.length, 3); i++) {
       final entry = prsSource.entries.toList()[i];
       final bodyPart = entry.key;
       final exercises = (entry.value as List);
-      
+
       if (exercises.isNotEmpty) {
         final topExercise = exercises[0];
         cards.add(
@@ -423,8 +443,8 @@ class _StatsScreenState extends State<StatsScreen> {
                       Text(
                         topExercise['exercise_name'] ?? 'Unknown',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -438,9 +458,9 @@ class _StatsScreenState extends State<StatsScreen> {
                       Text(
                         'Predicted 1RM: ${topExercise['est_1rm']}kg',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -451,7 +471,7 @@ class _StatsScreenState extends State<StatsScreen> {
         );
       }
     }
-    
+
     return cards;
   }
 
@@ -464,7 +484,11 @@ class _StatsScreenState extends State<StatsScreen> {
     for (final entry in _prs.entries) {
       final bodyPart = entry.key;
       final list = (entry.value as List)
-          .where((ex) => _selectedExerciseIds.contains((ex['exercise_id'] as num?)?.toInt()))
+          .where(
+            (ex) => _selectedExerciseIds.contains(
+              (ex['exercise_id'] as num?)?.toInt(),
+            ),
+          )
           .toList();
       if (list.isNotEmpty) {
         filtered[bodyPart] = list;
@@ -512,9 +536,11 @@ class _StatsScreenState extends State<StatsScreen> {
                             setDialogState(() {
                               tempSelected
                                 ..clear()
-                                ..addAll(_allExercises
-                                    .map((e) => (e['id'] as num?)?.toInt())
-                                    .whereType<int>());
+                                ..addAll(
+                                  _allExercises
+                                      .map((e) => (e['id'] as num?)?.toInt())
+                                      .whereType<int>(),
+                                );
                             });
                           },
                           child: const Text('Select all'),
@@ -530,7 +556,8 @@ class _StatsScreenState extends State<StatsScreen> {
                           final ex = _allExercises[index];
                           final exId = (ex['id'] as num?)?.toInt();
                           final exName = (ex['name'] ?? 'Exercise').toString();
-                          final checked = exId != null && tempSelected.contains(exId);
+                          final checked =
+                              exId != null && tempSelected.contains(exId);
 
                           return CheckboxListTile(
                             dense: true,
@@ -576,9 +603,7 @@ class _StatsScreenState extends State<StatsScreen> {
       final response = await http.post(
         ApiConfig.uri('/api/stats/preferences/'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'tracked_exercises': tempSelected.toList(),
-        }),
+        body: json.encode({'tracked_exercises': tempSelected.toList()}),
       );
 
       if (!mounted) return;
@@ -601,12 +626,11 @@ class _StatsScreenState extends State<StatsScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Saving failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Saving failed: $e')));
     }
   }
-
 }
 
 int min(int a, int b) => a < b ? a : b;

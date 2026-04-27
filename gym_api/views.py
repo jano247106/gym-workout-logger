@@ -184,7 +184,7 @@ class StatsViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def streak(self, request):
-        """Get consecutive training weeks streak based on completed workouts."""
+        """Get consecutive training days streak based on completed workouts."""
         user = User.objects.first()
         if not user:
             return Response({"error": "No user"}, status=status.HTTP_400_BAD_REQUEST)
@@ -199,27 +199,26 @@ class StatsViewSet(viewsets.ViewSet):
             .values_list('start_time', flat=True)
         )
 
-        week_starts = set()
+        training_days = set()
         for dt in workouts:
             local_dt = timezone.localtime(dt)
-            week_start = local_dt.date() - timedelta(days=local_dt.weekday())
-            week_starts.add(week_start)
+            training_days.add(local_dt.date())
 
-        if not week_starts:
+        if not training_days:
             return Response({
-                'streak_weeks': 0,
-                'latest_week_start': None,
+                'streak_days': 0,
+                'latest_training_day': None,
             })
 
-        current = max(week_starts)
+        current = max(training_days)
         streak = 0
-        while current in week_starts:
+        while current in training_days:
             streak += 1
-            current -= timedelta(days=7)
+            current -= timedelta(days=1)
 
         return Response({
-            'streak_weeks': streak,
-            'latest_week_start': max(week_starts),
+            'streak_days': streak,
+            'latest_training_day': max(training_days),
         })
     
     @action(detail=False, methods=['get'])
