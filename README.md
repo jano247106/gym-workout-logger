@@ -1,5 +1,5 @@
 # Github:
-https://github.com/jano247106/KRY-project
+https://github.com/jano247106/gym-workout-logger
 
 # Gym Logger
 Gym Logger is a full-stack workout tracking project with a Django backend and a Flutter mobile app.
